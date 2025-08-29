@@ -1,0 +1,319 @@
+import logging
+import asyncio
+from telegram import Update, ReplyKeyboardMarkup, KeyboardButton
+from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes, CallbackQueryHandler
+from telegram.error import BadRequest, Forbidden
+
+# Enable logging
+logging.basicConfig(
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
+)
+logger = logging.getLogger(__name__)
+
+# Replace with your bot token from @BotFather
+BOT_TOKEN = "8269947031:AAFiiLpB7mJyz7K4m_ez_qHlYiTjmsKyBEY"
+# Replace with your Telegram user ID (you can get it from @userinfobot)
+OWNER_ID = 8367788232
+
+# Store user data and conversation states
+user_sessions = {}
+
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Send a message when the command /start is issued."""
+    user = update.effective_user
+    user_id = user.id
+    
+    # Store user info
+    user_sessions[user_id] = {
+        'username': user.username,
+        'first_name': user.first_name,
+        'last_name': user.last_name,
+        'chatting_with_owner': False
+    }
+    
+    welcome_message = (
+        f"Hi {user.first_name}! 👋\n\n"
+        "I'm Victorex Private Message Bot. "
+        "You can use me to send messages, files, or even request a video chat with the bot owner.\n\n"
+        "Use /help to see available commands."
+    )
+    
+    await update.message.reply_text(welcome_message)
+
+async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Send a message when the command /help is issued."""
+    help_text = (
+        "🤖 *Available Commands:*\n\n"
+        "/start - Start the bot\n"
+        "/help - Show this help message\n"
+        "/chat - Start a chat with the owner\n"
+        "/end - End the current chat session\n"
+        "/videochat - Request a video chat with the owner\n\n"
+        "You can also send any type of media files (photos, videos, documents, voice messages) "
+        "when you're in a chat session with the owner."
+    )
+    await update.message.reply_text(help_text, parse_mode="Markdown")
+
+async def start_chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Start a chat session with the owner."""
+    user_id = update.effective_user.id
+    
+    if user_id not in user_sessions:
+        await update.message.reply_text("Please use /start first to initialize the bot.")
+        return
+    
+    user_sessions[user_id]['chatting_with_owner'] = True
+    
+    # Notify user
+    await update.message.reply_text(
+        "💬 You are now connected to the owner. Send your message and I'll forward it immediately.\n\n"
+        "Use /end to finish the conversation.",
+        reply_markup=ReplyKeyboardMarkup(
+            [[KeyboardButton("/end")]], resize_keyboard=True
+        )
+    )
+    
+    # Notify owner
+    user_info = user_sessions[user_id]
+    owner_message = (
+        f"🔔 *New Chat Request*\n\n"
+        f"From: {user_info['first_name']} {user_info.get('last_name', '')}\n"
+        f"Username: @{user_info['username']}\n"
+        f"User ID: `{user_id}`\n\n"
+        "You can now chat with this user."
+    )
+    
+    try:
+        await context.bot.send_message(
+            chat_id=OWNER_ID, 
+            text=owner_message,
+            parse_mode="Markdown"
+        )
+    except Exception as e:
+        logger.error(f"Error notifying owner: {e}")
+
+async def end_chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """End the current chat session."""
+    user_id = update.effective_user.id
+    
+    if user_id in user_sessions:
+        user_sessions[user_id]['chatting_with_owner'] = False
+    
+    await update.message.reply_text(
+        "You've ended the chat session. Use /chat if you want to start again.",
+        reply_markup=ReplyKeyboardMarkup([[]], resize_keyboard=True)  # Remove keyboard
+    )
+    
+    # Notify owner
+    try:
+        user_info = user_sessions[user_id]
+        await context.bot.send_message(
+            chat_id=OWNER_ID,
+            text=f"❌ {user_info['first_name']} has ended the chat session."
+        )
+    except Exception as e:
+        logger.error(f"Error notifying owner: {e}")
+
+async def request_video_chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Request a video chat with the owner."""
+    user_id = update.effective_user.id
+    
+    if user_id not in user_sessions:
+        await update.message.reply_text("Please use /start first to initialize the bot.")
+        return
+    
+    user_info = user_sessions[user_id]
+    
+    # Notify owner about video chat request
+    request_message = (
+        f"🎥 *Video Chat Request*\n\n"
+        f"From: {user_info['first_name']} {user_info.get('last_name', '')}\n"
+        f"Username: @{user_info['username']}\n"
+        f"User ID: `{user_id}`\n\n"
+        "Please respond to the user to arrange the video chat."
+    )
+    
+    try:
+        await context.bot.send_message(
+            chat_id=OWNER_ID, 
+            text=request_message,
+            parse_mode="Markdown"
+        )
+        await update.message.reply_text(
+            "✅ Your video chat request has been sent to the owner. "
+            "They will contact you shortly to arrange the video chat."
+        )
+    except Exception as e:
+        logger.error(f"Error sending video chat request: {e}")
+        await update.message.reply_text("❌ Failed to send your request. Please try again later.")
+
+async def forward_to_owner(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Forward user messages to the owner when in chat mode."""
+    user_id = update.effective_user.id
+    
+    if user_id not in user_sessions or not user_sessions[user_id].get('chatting_with_owner', False):
+        await update.message.reply_text("Please use /chat first to start a conversation with the owner.")
+        return
+    
+    user_info = user_sessions[user_id]
+    message = update.message
+    
+    # Prepare forwarded message caption with user info
+    caption = (
+        f"From: {user_info['first_name']} {user_info.get('last_name', '')}\n"
+        f"Username: @{user_info['username']}\n"
+        f"User ID: `{user_id}`"
+    )
+    
+    if message.text:
+        full_message = f"💬 {message.text}\n\n{caption}"
+        try:
+            await context.bot.send_message(
+                chat_id=OWNER_ID, 
+                text=full_message,
+                parse_mode="Markdown"
+            )
+        except Exception as e:
+            logger.error(f"Error forwarding message to owner: {e}")
+    
+    elif message.photo:
+        try:
+            await context.bot.send_photo(
+                chat_id=OWNER_ID,
+                photo=message.photo[-1].file_id,
+                caption=caption,
+                parse_mode="Markdown"
+            )
+        except Exception as e:
+            logger.error(f"Error forwarding photo to owner: {e}")
+    
+    elif message.video:
+        try:
+            await context.bot.send_video(
+                chat_id=OWNER_ID,
+                video=message.video.file_id,
+                caption=caption,
+                parse_mode="Markdown"
+            )
+        except Exception as e:
+            logger.error(f"Error forwarding video to owner: {e}")
+    
+    elif message.document:
+        try:
+            await context.bot.send_document(
+                chat_id=OWNER_ID,
+                document=message.document.file_id,
+                caption=caption,
+                parse_mode="Markdown"
+            )
+        except Exception as e:
+            logger.error(f"Error forwarding document to owner: {e}")
+    
+    elif message.voice:
+        try:
+            await context.bot.send_voice(
+                chat_id=OWNER_ID,
+                voice=message.voice.file_id,
+                caption=caption,
+                parse_mode="Markdown"
+            )
+        except Exception as e:
+            logger.error(f"Error forwarding voice message to owner: {e}")
+    
+    elif message.audio:
+        try:
+            await context.bot.send_audio(
+                chat_id=OWNER_ID,
+                audio=message.audio.file_id,
+                caption=caption,
+                parse_mode="Markdown"
+            )
+        except Exception as e:
+            logger.error(f"Error forwarding audio to owner: {e}")
+    
+    elif message.sticker:
+        try:
+            await context.bot.send_sticker(
+                chat_id=OWNER_ID,
+                sticker=message.sticker.file_id
+            )
+            await context.bot.send_message(
+                chat_id=OWNER_ID,
+                text=caption,
+                parse_mode="Markdown"
+            )
+        except Exception as e:
+            logger.error(f"Error forwarding sticker to owner: {e}")
+
+async def forward_to_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Forward owner's messages to the user."""
+    if update.effective_user.id != OWNER_ID:
+        return  # Only owner can use this function
+    
+    if not context.args:
+        await update.message.reply_text("Usage: /reply <user_id> <message>")
+        return
+    
+    try:
+        user_id = int(context.args[0])
+        message_text = " ".join(context.args[1:])
+        
+        if not message_text:
+            await update.message.reply_text("Please provide a message to send.")
+            return
+        
+        # Send message to user
+        await context.bot.send_message(
+            chat_id=user_id,
+            text=f"📩 Message from owner:\n\n{message_text}"
+        )
+        
+        # Confirm to owner
+        await update.message.reply_text("✅ Message sent to user.")
+        
+    except (ValueError, IndexError):
+        await update.message.reply_text("Usage: /reply <user_id> <message>")
+    except BadRequest:
+        await update.message.reply_text("❌ User not found. They might have not started the bot.")
+    except Forbidden:
+        await update.message.reply_text("❌ User has blocked the bot.")
+    except Exception as e:
+        logger.error(f"Error sending message to user: {e}")
+        await update.message.reply_text("❌ Failed to send message.")
+
+async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE):
+    """Log errors caused by Updates."""
+    logger.error("Exception while handling an update:", exc_info=context.error)
+
+def main():
+    """Start the bot."""
+    # Create the Application and pass it your bot's token.
+    application = Application.builder().token(BOT_TOKEN).build()
+
+    # Add handlers
+    application.add_handler(CommandHandler("start", start))
+    application.add_handler(CommandHandler("help", help_command))
+    application.add_handler(CommandHandler("chat", start_chat))
+    application.add_handler(CommandHandler("end", end_chat))
+    application.add_handler(CommandHandler("videochat", request_video_chat))
+    application.add_handler(CommandHandler("reply", forward_to_user))
+    
+    # Handle all messages except commands
+    application.add_handler(MessageHandler(
+        filters.TEXT & ~filters.COMMAND, forward_to_owner
+    ))
+    application.add_handler(MessageHandler(
+        filters.PHOTO | filters.VIDEO | filters.DOCUMENT | 
+        filters.VOICE | filters.AUDIO | filters.STICKER, 
+        forward_to_owner
+    ))
+    
+    # Handle errors
+    application.add_error_handler(error_handler)
+
+    # Start the Bot
+    print("Bot is running...")
+    application.run_polling(allowed_updates=Update.ALL_TYPES)
+
+if __name__ == "__main__":
+    main()
