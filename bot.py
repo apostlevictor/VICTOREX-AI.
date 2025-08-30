@@ -12,7 +12,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Bot configuration - REPLACE WITH YOUR ACTUAL VALUES
-BOT_TOKEN = "8269947031:AAFiiLpB7mJyz7K4m_ez_qHlYiTjmsKyBE"  # Get from @BotFather
+BOT_TOKEN = "8269947031:AAFX3qv2HOwXI0sCTdb3vF6LdrDw_SkONhA"  # Get from @BotFather
 ADMIN_ID = "8367788232"    # Your Telegram user ID (get from @userinfobot)
 
 # Image URLs for illustrations (replace with your own image URLs)
