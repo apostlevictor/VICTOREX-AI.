@@ -328,7 +328,7 @@ def main():
     
     # Handle media messages
     application.add_handler(MessageHandler(
-        filters.PHOTO | filters.VIDEO | filters.DOCUMENT, 
+        filters.PHOTO | filters.VIDEO | filters.ATTACHMENT 
         forward_to_admin
     ))
     
