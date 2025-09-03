@@ -48,7 +48,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 • Forex/Binary Signals
 • Meme Coin Trading
 
-*Contact me for rates!*
+*Contact me for rates! (+2347062791952)*
         """
     elif user_message == "📊 Channel Info":
         response = "Join my Telegram channel for daily signals & updates:\nhttps://t.me/VictorexTrader"
