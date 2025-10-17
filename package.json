@@ -1,0 +1,15 @@
+{
+  "name": "victorex-trader-bot",
+  "version": "1.0.0",
+  "description": "Privacy-focused Telegram bot for Victorex Trader",
+  "main": "api/bot.js",
+  "scripts": {
+    "dev": "vercel dev"
+  },
+  "dependencies": {
+    "node-telegram-bot-api": "^0.64.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
