@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apostle Victor - AI Ministry Assistant</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👨‍💼</text></svg>">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f5f5;
+            color: #333;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #1a5276, #2e86c1);
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .logo-container {
+            display: flex;
+            align-items: center;
+            margin-right: 20px;
+        }
+        
+        .logo {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+            font-size: 24px;
+            box-shadow: 0 0 5px rgba(0,0,0,0.2);
+        }
+        
+        .header-text h1 {
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+        }
+        
+        .header-text p {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+        
+        .ad-banner {
+            background: linear-gradient(to right, #f39c12, #e67e22);
+            color: white;
+            text-align: center;
+            padding: 12px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            overflow: hidden;
+            position: relative;
+            height: 50px;
+        }
+        
+        .ad-text {
+            position: absolute;
+            width: 100%;
+            animation: scrollText 20s linear infinite;
+            white-space: nowrap;
+        }
+        
+        @keyframes scrollText {
+            0% { transform: translateX(100%); }
+            100% { transform: translateX(-100%); }
+        }
+        
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+            background-color: white;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .message {
+            max-width: 80%;
+            padding: 15px;
+            border-radius: 15px;
+            line-height: 1.5;
+            position: relative;
+        }
+        
+        .user-message {
+            align-self: flex-end;
+            background-color: #e3f2fd;
+            border-bottom-right-radius: 5px;
+        }
+        
+        .bot-message {
+            align-self: flex-start;
+            background-color: #f0f0f0;
+            border-bottom-left-radius: 5px;
+        }
+        
+        .message-header {
+            font-weight: bold;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .bot-icon {
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            background-color: #1a5276;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 8px;
+            font-size: 12px;
+        }
+        
+        .chat-input-container {
+            padding: 20px;
+            border-top: 1px solid #eee;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .chat-input {
+            flex: 1;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 25px;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        
+        .chat-input:focus {
+            border-color: #2e86c1;
+        }
+        
+        .send-button {
+            background-color: #2e86c1;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            padding: 0 25px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.3s;
+        }
+        
+        .send-button:hover {
+            background-color: #1a5276;
+        }
+        
+        .typing-indicator {
+            display: none;
+            align-self: flex-start;
+            background-color: #f0f0f0;
+            padding: 15px;
+            border-radius: 15px;
+            border-bottom-left-radius: 5px;
+            margin-bottom: 10px;
+        }
+        
+        .typing-dots {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #888;
+            animation: typing 1.4s infinite ease-in-out;
+        }
+        
+        .typing-dot:nth-child(1) { animation-delay: 0s; }
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+        
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-5px); }
+        }
+        
+        @media (max-width: 768px) {
+            .message {
+                max-width: 90%;
+            }
+            
+            .header-text h1 {
+                font-size: 1.2rem;
+            }
+            
+            .ad-banner {
+                font-size: 1rem;
+                height: 40px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo-container">
+            <div class="logo">👨‍💼</div>
+            <div class="header-text">
+                <h1>Apostle Victor Chukwuka Chikamso</h1>
+                <p>AI Ministry Assistant & Teacher</p>
+            </div>
+        </div>
+    </header>
+    
+    <div class="ad-banner">
+        <div class="ad-text" id="adText">Welcome to Apostle Victor Ministry - Jesus Christ is the same yesterday, today, and forever! - Hebrews 13:8</div>
+    </div>
+    
+    <div class="chat-container">
+        <div class="chat-messages" id="chatMessages">
+            <div class="message bot-message">
+                <div class="message-header">
+                    <div class="bot-icon">AV</div>
+                    Apostle Victor
+                </div>
+                <div class="message-content">
+                    Greetings in the precious name of our Lord and Savior Jesus Christ! I am Apostle Victor Chukwuka Chikamso, your AI ministry assistant. How can I help you today? Feel free to ask me questions about the Bible, Christian teachings, or my ministry work.
+                </div>
+            </div>
+        </div>
+        
+        <div class="typing-indicator" id="typingIndicator">
+            <div class="typing-dots">
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+            </div>
+        </div>
+        
+        <div class="chat-input-container">
+            <input type="text" class="chat-input" id="chatInput" placeholder="Type your message here...">
+            <button class="send-button" id="sendButton">Send</button>
+        </div>
+    </div>
+
+    <script>
+        // API configuration
+        const EDEN_AI_API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiYmM1YTNiNzAtZGRmMi00MmNhLTg2YTktZmVmODc4YWEwN2Y0IiwidHlwZSI6ImFwaV90b2tlbiJ9.0IlngwfYhg2NHos_bumsMKVNPIa1MuP3wcSSvc8TX4k";
+        
+        // DOM elements
+        const chatMessages = document.getElementById('chatMessages');
+        const chatInput = document.getElementById('chatInput');
+        const sendButton = document.getElementById('sendButton');
+        const typingIndicator = document.getElementById('typingIndicator');
+        const adText = document.getElementById('adText');
+        
+        // Ad rotation
+        const adMessages = [
+            "Welcome to Apostle Victor Ministry - Jesus Christ is the same yesterday, today, and forever! - Hebrews 13:8",
+            "Experience God's transforming power in your life - Join us for Bible study every Wednesday",
+            "Salvation is found in no one else, for there is no other name under heaven given to mankind by which we must be saved - Acts 4:12",
+            "Apostle Victor Ministry - Bringing the light of Christ to the digital world",
+            "For God so loved the world that he gave his one and only Son - John 3:16",
+            "Connect with Apostle Victor for spiritual guidance and biblical teaching"
+        ];
+        
+        let adIndex = 0;
+        setInterval(() => {
+            adIndex = (adIndex + 1) % adMessages.length;
+            adText.textContent = adMessages[adIndex];
+        }, 8000);
+        
+        // Predefined responses for common questions
+        const predefinedResponses = {
+            "who are you": "I am Apostle Victor Chukwuka Chikamso, a servant of God called to preach the gospel of Jesus Christ and teach the Word of God with accuracy and power. My ministry focuses on bringing the light of Christ to the digital world through technological means.",
+            "about apostle victor": "Apostle Victor Chukwuka Chikamso is a dedicated minister of the gospel with a calling to reach the world with the message of salvation. He combines deep biblical understanding with technical expertise to create innovative ministry solutions.",
+            "what is the gospel": "The gospel is the good news that Jesus Christ, the Son of God, died for our sins, was buried, and rose again on the third day, according to the Scriptures (1 Corinthians 15:3-4). Through faith in Him, we receive forgiveness of sins and eternal life.",
+            "how to be saved": "To be saved, you must believe in your heart that Jesus is Lord and confess with your mouth that God raised Him from the dead (Romans 10:9-10). Repent of your sins and accept Jesus Christ as your personal Lord and Savior.",
+            "prayer": "Heavenly Father, I come to You in the name of Jesus. I acknowledge that I am a sinner in need of Your grace. I believe that Jesus died for my sins and rose again. I repent of my sins and ask Jesus to be my Lord and Savior. Fill me with Your Holy Spirit and help me to live for You. In Jesus' name, Amen.",
+            "bible verse": "For God so loved the world that he gave his one and only Son, that whoever believes in him shall not perish but have eternal life. - John 3:16",
+            "ministry": "Apostle Victor's ministry focuses on three key areas: 1) Preaching the gospel of salvation through Jesus Christ, 2) Teaching the Bible with technical accuracy and depth, and 3) Equipping believers for effective ministry in the digital age.",
+            "technical analysis": "From a technical biblical analysis perspective, we examine Scripture in its original languages, historical context, and literary structure to derive accurate interpretation and application for today's believers. This approach ensures we're not merely offering opinions but presenting God's truth as He intended."
+        };
+        
+        // Chat functionality
+        function addMessage(content, isUser = false) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user-message' : 'bot-message'}`;
+            
+            if (isUser) {
+                messageDiv.innerHTML = `
+                    <div class="message-content">${content}</div>
+                `;
+            } else {
+                messageDiv.innerHTML = `
+                    <div class="message-header">
+                        <div class="bot-icon">AV</div>
+                        Apostle Victor
+                    </div>
+                    <div class="message-content">${content}</div>
+                `;
+            }
+            
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        
+        function showTypingIndicator() {
+            typingIndicator.style.display = 'block';
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        
+        function hideTypingIndicator() {
+            typingIndicator.style.display = 'none';
+        }
+        
+        // Process user message
+        async function processMessage(message) {
+            showTypingIndicator();
+            
+            // Check for predefined responses first
+            const lowerMessage = message.toLowerCase().trim();
+            let response = "";
+            
+            for (const [key, value] of Object.entries(predefinedResponses)) {
+                if (lowerMessage.includes(key)) {
+                    response = value;
+                    break;
+                }
+            }
+            
+            // If no predefined response, use Eden AI API
+            if (!response) {
+                try {
+                    response = await getAIResponse(message);
+                } catch (error) {
+                    console.error("API Error:", error);
+                    response = "I'm experiencing technical difficulties right now. Please try again later or ask about Apostle Victor, the gospel, or biblical teachings which I can address directly.";
+                }
+            }
+            
+            // Simulate typing delay
+            setTimeout(() => {
+                hideTypingIndicator();
+                addMessage(response);
+            }, 1500);
+        }
+        
+        // Get response from Eden AI
+        async function getAIResponse(message) {
+            // In a real implementation, we would call the Eden AI API
+            // For now, we'll simulate API responses based on message content
+            
+            // Simulate API delay
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            // Generate responses based on keywords
+            if (message.toLowerCase().includes('jesus') || message.toLowerCase().includes('christ')) {
+                return "Jesus Christ is the central figure of our faith. He is the Son of God who came to earth, lived a sinless life, died on the cross for our sins, and rose again on the third day. Through faith in Him, we receive salvation and eternal life (John 3:16).";
+            }
+            
+            if (message.toLowerCase().includes('bible') || message.toLowerCase().includes('scripture')) {
+                return "The Bible is the inspired Word of God, given to us for teaching, rebuking, correcting and training in righteousness (2 Timothy 3:16). It contains everything we need for life and godliness. I encourage you to read it daily and allow the Holy Spirit to illuminate its truths to your heart.";
+            }
+            
+            if (message.toLowerCase().includes('sin') || message.toLowerCase().includes('forgiveness')) {
+                return "All have sinned and fall short of God's glory (Romans 3:23). But the good news is that through Jesus Christ, we can receive forgiveness of sins. If we confess our sins, He is faithful and just to forgive us our sins and cleanse us from all unrighteousness (1 John 1:9).";
+            }
+            
+            if (message.toLowerCase().includes('holy spirit')) {
+                return "The Holy Spirit is the third person of the Trinity. He convicts the world of sin, righteousness, and judgment (John 16:8). When we accept Christ, the Holy Spirit comes to dwell within us, guiding, teaching, and empowering us to live godly lives (Acts 1:8).";
+            }
+            
+            if (message.toLowerCase().includes('faith') || message.toLowerCase().includes('believe')) {
+                return "Faith is the substance of things hoped for, the evidence of things not seen (Hebrews 11:1). We are saved by grace through faith, not by works, so that no one can boast (Ephesians 2:8-9). True faith produces good works as evidence of our relationship with Christ.";
+            }
+            
+            // Default response
+            return "Thank you for your question. As Apostle Victor, I'm called to preach the gospel of Jesus Christ and teach God's Word with accuracy. The central message of the Bible is that Jesus died for our sins and rose again, offering salvation to all who believe. Would you like to know more about this salvation or any specific biblical topic?";
+        }
+        
+        // Event listeners
+        sendButton.addEventListener('click', sendMessage);
+        chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+        
+        function sendMessage() {
+            const message = chatInput.value.trim();
+            if (message) {
+                addMessage(message, true);
+                chatInput.value = '';
+                processMessage(message);
+            }
+        }
+        
+        // Initial greeting
+        setTimeout(() => {
+            addMessage("You can ask me about salvation, Apostle Victor's ministry, biblical teachings, or any spiritual question you may have. I'm here to help you grow in your relationship with God.");
+        }, 2000);
+    </script>
+</body>
+</html>
